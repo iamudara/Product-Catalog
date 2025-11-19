@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import './App.css';
 
 
@@ -131,6 +131,67 @@ function ProductCard({ product }) {
   );
 }
 
+function CustomSelect({ value, onChange, options }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef(null);
+
+  const selectedOption = options.find(opt => opt.value === value);
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+  return (
+    <div className="custom-select-container" ref={dropdownRef}>
+      <div 
+        className={`custom-select-trigger ${isOpen ? 'open' : ''}`} 
+        onClick={() => setIsOpen(!isOpen)}
+      >
+        <span>{selectedOption ? selectedOption.label : 'Select...'}</span>
+        <svg 
+          className={`arrow ${isOpen ? 'up' : ''}`} 
+          width="20" 
+          height="20" 
+          viewBox="0 0 24 24" 
+          fill="none" 
+          stroke="currentColor" 
+          strokeWidth="2" 
+          strokeLinecap="round" 
+          strokeLinejoin="round"
+        >
+          <polyline points="6 9 12 15 18 9"></polyline>
+        </svg>
+      </div>
+      
+      {isOpen && (
+        <div className="custom-select-options">
+          {options.map((option) => (
+            <div 
+              key={option.value} 
+              className={`custom-option ${value === option.value ? 'selected' : ''}`}
+              onClick={() => {
+                onChange(option.value);
+                setIsOpen(false);
+              }}
+            >
+              {option.label}
+              {value === option.value && <span className="check">✓</span>}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 
 function App() {
   const [selectedCategory, setSelectedCategory] = useState('All');
@@ -183,8 +244,8 @@ function App() {
         <p>Browse our amazing products</p>
       </header>
 
-      {/* Search and Sort */}
-      <div className="search-sort-bar">
+      {/* Search Section (Centered) */}
+      <div className="search-container">
         <div className="search-box">
           <input
             type="text"
@@ -193,44 +254,51 @@ function App() {
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        
-        <div className="sort-box">
-          <label>Sort by: </label>
-          <select value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
-            <option value="name">Name</option>
-            <option value="price-low">Price: Low to High</option>
-            <option value="price-high">Price: High to Low</option>
-          </select>
-        </div>
-
-        {/* New: In Stock checkbox */}
-        <div className="stock-filter">
-          <label>
-            <input
-              type="checkbox"
-              checked={showInStockOnly}
-              onChange={(e) => setShowInStockOnly(e.target.checked)}
-            />
-            In Stock Only
-          </label>
-        </div>
       </div>
 
-      
+      {/* Controls Row: Categories (Left) + Sort/Stock (Right) */}
+      <div className="controls-row">
+        {/* Category Filter */}
+        <div className="filters">
+          <h3>Filter by Category:</h3>
+          <div className="category-buttons">
+            {categories.map((category) => (
+              <button
+                key={category}
+                className={`filter-btn ${selectedCategory === category ? 'active' : ''}`}
+                onClick={() => setSelectedCategory(category)}
+              >
+                {category}
+              </button>
+            ))}
+          </div>
+        </div>
 
-      {/* Category Filter */}
-      <div className="filters">
-        <h3>Filter by Category:</h3>
-        <div className="category-buttons">
-          {categories.map((category) => (
-            <button
-              key={category}
-              className={`filter-btn ${selectedCategory === category ? 'active' : ''}`}
-              onClick={() => setSelectedCategory(category)}
-            >
-              {category}
-            </button>
-          ))}
+        {/* Right Side Actions */}
+        <div className="actions-group">
+          <div className="sort-box">
+            <label>Sort by: </label>
+            <CustomSelect 
+              value={sortBy} 
+              onChange={setSortBy}
+              options={[
+                { value: 'name', label: 'Name' },
+                { value: 'price-low', label: 'Price: Low to High' },
+                { value: 'price-high', label: 'Price: High to Low' }
+              ]}
+            />
+          </div>
+
+          <div className="stock-filter">
+            <label>
+              <input
+                type="checkbox"
+                checked={showInStockOnly}
+                onChange={(e) => setShowInStockOnly(e.target.checked)}
+              />
+              In Stock Only
+            </label>
+          </div>
         </div>
       </div>
       
